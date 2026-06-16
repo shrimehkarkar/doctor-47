@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOCTOR 47 • Digital Token System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .font-display {
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+            font-weight: 600;
+        }
+
+        .token-card {
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .status-waiting {
+            background-color: #fefce8;
+            color: #854d0e;
+        }
+        
+        .status-serving {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-done {
+            background-color: #f3e8ff;
+            color: #581c87;
+        }
+
+        .modern-shadow {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        .nav-tab {
+            position: relative;
+        }
+        
+        .nav-tab.active:after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: #0ea47a;
+            border-radius: 3px;
+        }
+
+        .service-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .service-card.active {
+            border-color: #0ea47a;
+            background-color: #052e16;
+        }
+
+        .doctor-badge {
+            background: linear-gradient(90deg, #0ea47a, #14b8a6);
+            color: white;
+            font-size: 10px;
+            padding: 1px 8px;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .queue-row {
+            transition: background-color 0.2s ease;
+        }
+
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+
+        .metric {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .realistic-shadow {
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .toast {
+            animation: slideUp 0.3s ease forwards;
+        }
+
+        .token-number {
+            font-family: 'Space Grotesk', monospace;
+            letter-spacing: -2px;
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200">
+    <!-- Top Navigation -->
+    <nav class="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto px-6">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center gap-x-3">
+                    <div class="w-11 h-11 bg-emerald-600 rounded-2xl flex items-center justify-center">
+                        <i class="fa-solid fa-user-md text-white text-3xl"></i>
+                    </div>
+                    <div>
+                        <span class="font-display text-3xl font-semibold tracking-tighter">DOCTOR 47</span>
+                        <span class="text-[10px] text-emerald-500 font-mono block -mt-1">HOSPITAL</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-x-4">
+                    <!-- Hospital Info -->
+                    <div class="hidden md:flex items-center gap-x-2 px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-3xl text-sm">
+                        <div class="flex items-center gap-x-2">
+                            <i class="fa-solid fa-hospital text-emerald-400"></i>
+                            <div>
+                                <div class="text-xs text-zinc-400">Apollo Hospitals</div>
+                                <div class="font-medium text-sm">Indiranagar, Bengaluru</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User -->
+                    <div class="flex items-center gap-x-3 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-3xl">
+                        <img src="https://i.pravatar.cc/32?img=68" class="w-8 h-8 rounded-full ring-2 ring-zinc-700" alt="">
+                        <div class="hidden md:block">
+                            <div class="text-sm font-medium">Priya Sharma</div>
+                            <div class="text-[10px] text-zinc-500">Patient ID: P-48291</div>
+                        </div>
+                    </div>
+
+                    <button onclick="showAdminPanel()" 
+                            class="px-4 py-2 text-sm font-medium flex items-center gap-x-2 bg-zinc-800 hover:bg-zinc-700 transition-colors rounded-3xl border border-zinc-700">
+                        <i class="fa-solid fa-user-shield"></i>
+                        <span class="hidden md:inline text-xs">Staff</span>
+                    </button>
+
+                    <!-- Firebase Status -->
+                    <div onclick="toggleFirebase()" class="cursor-pointer flex items-center gap-x-3 px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-3xl text-xs">
+                        <div class="flex items-center gap-x-2">
+                            <div class="relative">
+                                <i class="fa-solid fa-cloud text-emerald-400" id="firebase-icon"></i>
+                                <div id="firebase-pulse" class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full animate-pulse hidden"></div>
+                            </div>
+                            <div>
+                                <span class="hidden md:inline text-emerald-400 font-medium" id="firebase-status">Firebase</span>
+                                <div id="last-sync" class="text-[9px] text-emerald-400/70 hidden md:block">Live</div>
+                            </div>
+                        </div>
+                        <button onclick="event.stopImmediatePropagation(); forceFirebaseSync()" 
+                                class="px-3 py-1 text-[10px] bg-emerald-900 hover:bg-emerald-800 text-emerald-300 rounded-2xl font-medium transition-colors">
+                            <i class="fa-solid fa-sync mr-1"></i> Sync Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-screen-2xl mx-auto px-6 pt-8 pb-12">
+        
+        <!-- Hero -->
+        <div class="mb-10">
+            <div class="flex flex-col lg:flex-row gap-8 items-start">
+                <div class="max-w-xl">
+                    <div class="inline-flex items-center gap-x-2 px-4 py-1 rounded-3xl bg-emerald-950 text-emerald-400 text-xs font-semibold mb-4 tracking-widest">
+                        <i class="fa-solid fa-circle text-xs"></i> 
+                        LIVE • 47 DOCTORS ONLINE
+                    </div>
+                    
+                    <h1 class="font-display text-6xl leading-[1.05] tracking-tighter font-semibold mb-4">
+                        Book your<br>
+                        <span class="text-emerald-400">doctor appointment.</span><br>
+                        Skip the wait.
+                    </h1>
+                    <p class="text-xl text-zinc-400 max-w-md">Get a digital token, see real-time queue, and get notified when it's your turn.</p>
+                    
+                    <div class="flex items-center gap-x-4 mt-8">
+                        <button onclick="document.getElementById('book-section').scrollIntoView({ behavior: 'smooth' })" 
+                                class="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 transition-all font-semibold rounded-3xl flex items-center gap-x-2">
+                            <span>Book Appointment</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                        <button onclick="switchTab('live')" 
+                                class="px-6 py-3.5 text-sm font-medium flex items-center gap-x-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 transition-all rounded-3xl">
+                            <i class="fa-solid fa-chart-line"></i>
+                            <span>View Live Queue</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hero Stats -->
+                <div class="grid grid-cols-3 gap-4 w-full max-w-lg">
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-5">
+                        <div class="text-emerald-400 text-xs font-medium">AVG WAIT SAVED</div>
+                        <div class="text-4xl font-semibold tabular-nums mt-1">52<span class="text-xl font-normal text-zinc-500">min</span></div>
+                    </div>
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-5">
+                        <div class="text-emerald-400 text-xs font-medium">TOKENS TODAY</div>
+                        <div class="text-4xl font-semibold tabular-nums mt-1">3,842</div>
+                    </div>
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-5">
+                        <div class="text-emerald-400 text-xs font-medium">DOCTORS ONLINE</div>
+                        <div class="text-4xl font-semibold tabular-nums mt-1">47</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex border-b border-zinc-800 mb-8">
+            <div onclick="switchTab('book')" class="nav-tab px-6 py-3 cursor-pointer flex items-center gap-x-2 text-sm font-medium border-b-2 border-transparent active-tab" id="tab-book">
+                <i class="fa-solid fa-calendar-check w-4"></i>
+                <span>Book Appointment</span>
+            </div>
+            <div onclick="switchTab('my-tokens')" class="nav-tab px-6 py-3 cursor-pointer flex items-center gap-x-2 text-sm font-medium border-b-2 border-transparent" id="tab-my-tokens">
+                <i class="fa-solid fa-user w-4"></i>
+                <span>My Appointments</span>
+                <span id="my-tokens-count" class="ml-1.5 text-xs bg-emerald-900 text-emerald-400 px-2 rounded-full font-mono">3</span>
+            </div>
+            <div onclick="switchTab('live')" class="nav-tab px-6 py-3 cursor-pointer flex items-center gap-x-2 text-sm font-medium border-b-2 border-transparent" id="tab-live">
+                <i class="fa-solid fa-tv w-4"></i>
+                <span>Live Queue</span>
+            </div>
+            <div onclick="switchTab('history')" class="nav-tab px-6 py-3 cursor-pointer flex items-center gap-x-2 text-sm font-medium border-b-2 border-transparent" id="tab-history">
+                <i class="fa-solid fa-history w-4"></i>
+                <span>History</span>
+            </div>
+        </div>
+
+        <!-- BOOK SECTION -->
+        <div id="book-section" class="section active max-w-4xl">
+            <div class="mb-6">
+                <h2 class="text-3xl font-semibold tracking-tight">Book an Appointment</h2>
+                <p class="text-zinc-400">Select department and doctor. Get instant digital token.</p>
+            </div>
+
+            <!-- Department Selection -->
+            <div class="mb-6">
+                <div class="text-xs font-semibold tracking-widest text-zinc-500 mb-3">SELECT DEPARTMENT</div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div onclick="selectDepartment(0)" class="service-card cursor-pointer px-5 py-4 bg-zinc-900 border border-emerald-900/50 hover:border-emerald-600 rounded-3xl flex gap-x-4 items-center active" id="dept-0">
+                        <i class="fa-solid fa-stethoscope text-3xl text-emerald-400 w-8"></i>
+                        <div>
+                            <div class="font-semibold">General Medicine</div>
+                            <div class="text-xs text-emerald-400">12 doctors available</div>
+                        </div>
+                    </div>
+                    <div onclick="selectDepartment(1)" class="service-card cursor-pointer px-5 py-4 bg-zinc-900 border border-emerald-900/50 hover:border-emerald-600 rounded-3xl flex gap-x-4 items-center" id="dept-1">
+                        <i class="fa-solid fa-heartbeat text-3xl text-red-400 w-8"></i>
+                        <div>
+                            <div class="font-semibold">Cardiology</div>
+                            <div class="text-xs text-emerald-400">8 doctors available</div>
+                        </div>
+                    </div>
+                    <div onclick="selectDepartment(2)" class="service-card cursor-pointer px-5 py-4 bg-zinc-900 border border-emerald-900/50 hover:border-emerald-600 rounded-3xl flex gap-x-4 items-center" id="dept-2">
+                        <i class="fa-solid fa-lungs text-3xl text-sky-400 w-8"></i>
+                        <div>
+                            <div class="font-semibold">Pulmonology</div>
+                            <div class="text-xs text-emerald-400">6 doctors available</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Doctors Grid -->
+            <div id="doctors-section" class="mb-8">
+                <div class="text-xs font-semibold tracking-widest text-zinc-500 mb-3 px-1">AVAILABLE DOCTORS</div>
+                <div id="doctors-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+            </div>
+
+            <!-- Booking Form -->
+            <div id="booking-form" class="hidden bg-zinc-900 border border-zinc-700 rounded-3xl p-8">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <div id="selected-doctor-name" class="font-semibold text-2xl"></div>
+                        <div id="selected-doctor-specialty" class="text-emerald-400"></div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-zinc-400">Current Queue</div>
+                        <div id="doctor-queue-count" class="font-mono text-3xl font-semibold text-emerald-400"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">PATIENT NAME</label>
+                        <input type="text" id="user-name" value="Priya Sharma" class="w-full bg-zinc-950 border border-zinc-700 px-4 py-3 rounded-2xl focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">PHONE NUMBER</label>
+                        <input type="tel" id="user-phone" value="+91 98765 43210" class="w-full bg-zinc-950 border border-zinc-700 px-4 py-3 rounded-2xl focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <label class="block text-xs font-medium text-zinc-400 mb-1.5">PREFERRED TIME SLOT</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="time-slots">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-x-3 mt-8">
+                    <button onclick="bookAppointment()" 
+                            class="flex-1 bg-emerald-600 hover:bg-emerald-700 transition-colors font-semibold py-4 rounded-3xl flex items-center justify-center gap-x-2 text-sm">
+                        <i class="fa-solid fa-ticket"></i>
+                        <span>CONFIRM BOOKING</span>
+                    </button>
+                    <button onclick="cancelBookingForm()" class="px-8 py-4 text-sm font-medium border border-zinc-700 hover:bg-zinc-800 transition-colors rounded-3xl">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MY APPOINTMENTS -->
+        <div id="my-tokens-section" class="section">
+            <div class="max-w-4xl">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h2 class="text-3xl font-semibold tracking-tight">My Appointments</h2>
+                        <p class="text-zinc-400">Track your tokens and get notified</p>
+                    </div>
+                    <button onclick="switchTab('book')" class="text-sm flex items-center gap-x-2 text-emerald-400 hover:text-emerald-300">
+                        <i class="fa-solid fa-plus"></i> 
+                        <span>New Appointment</span>
+                    </button>
+                </div>
+
+                <div id="my-tokens-list" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- LIVE QUEUE -->
+        <div id="live-section" class="section">
+            <div class="max-w-6xl">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                    <div>
+                        <h2 class="text-3xl font-semibold tracking-tight">Live Queue • Apollo Hospitals</h2>
+                        <p class="text-zinc-400">Real-time updates across all OPD counters</p>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <div class="px-4 py-2 bg-zinc-900 border border-zinc-700 rounded-3xl flex items-center text-sm">
+                            <i class="fa-solid fa-sync fa-spin mr-2 text-emerald-400"></i>
+                            <span>Live • Updated now</span>
+                        </div>
+                        <button onclick="advanceAllQueues()" 
+                                class="px-5 py-2 bg-emerald-900 hover:bg-emerald-800 text-sm font-medium rounded-3xl flex items-center gap-x-2 border border-emerald-700">
+                            <i class="fa-solid fa-forward"></i>
+                            <span>Advance Queue</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-5">
+                        <div class="text-xs text-zinc-400">PATIENTS IN QUEUE</div>
+                        <div id="total-queue" class="text-4xl font-semibold tabular-nums mt-1">124</div>
+                    </div>
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-5">
+                        <div class="text-xs text-zinc-400">CURRENTLY WITH DOCTOR</div>
+                        <div id="serving-count" class="text-4xl font-semibold tabular-nums mt-1">31</div>
+                    </div>
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-5">
+                        <div class="text-xs text-zinc-400">AVG WAIT TIME</div>
+                        <div id="avg-wait-live" class="text-4xl font-semibold tabular-nums mt-1">21<span class="text-xl">min</span></div>
+                    </div>
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-5">
+                        <div class="text-xs text-zinc-400">TOKENS ISSUED TODAY</div>
+                        <div id="today-tokens" class="text-4xl font-semibold tabular-nums mt-1">3,842</div>
+                    </div>
+                </div>
+
+                <!-- Live Table -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden">
+                    <div class="px-6 py-4 flex justify-between items-center bg-zinc-950 border-b border-zinc-800">
+                        <div class="font-semibold">Current Queue Status</div>
+                        <div class="text-xs px-3 py-1 bg-zinc-800 rounded-full">47 active counters</div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-zinc-800 text-xs text-zinc-400">
+                                    <th class="px-6 py-4 text-left font-medium">TOKEN</th>
+                                    <th class="px-6 py-4 text-left font-medium">PATIENT</th>
+                                    <th class="px-6 py-4 text-left font-medium">DOCTOR</th>
+                                    <th class="px-6 py-4 text-left font-medium">DEPARTMENT</th>
+                                    <th class="px-6 py-4 text-left font-medium">STATUS</th>
+                                    <th class="px-6 py-4 text-center font-medium">POSITION</th>
+                                    <th class="px-6 py-4 text-right font-medium">EST. WAIT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="live-queue-table" class="divide-y divide-zinc-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PATIENT HISTORY SECTION -->
+        <div id="history-section" class="section">
+            <div class="max-w-4xl">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-semibold tracking-tight">Appointment History</h2>
+                    <p class="text-zinc-400">Your past consultations with DOCTOR 47</p>
+                </div>
+
+                <div class="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden">
+                    <div class="px-6 py-4 border-b border-zinc-800 flex justify-between items-center">
+                        <div class="font-semibold">Completed Appointments</div>
+                        <div class="text-xs px-3 py-1 bg-zinc-800 rounded-full" id="history-count">12 total</div>
+                    </div>
+                    
+                    <div id="history-list" class="divide-y divide-zinc-800">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" onclick="if (event.target.id === 'success-modal') hideSuccessModal()" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+        <div onclick="event.stopImmediatePropagation()" class="max-w-md w-full mx-4 bg-zinc-900 border border-zinc-700 rounded-3xl overflow-hidden">
+            <div class="px-8 pt-8 pb-6 text-center">
+                <div class="mx-auto w-16 h-16 bg-emerald-500/10 text-emerald-400 flex items-center justify-center rounded-2xl mb-4">
+                    <i class="fa-solid fa-check text-4xl"></i>
+                </div>
+                <h3 class="text-2xl font-semibold">Appointment Booked!</h3>
+                <p class="text-zinc-400 mt-1">Your digital token has been issued successfully.</p>
+                
+                <div class="my-8 p-6 bg-zinc-950 border border-zinc-800 rounded-3xl text-left">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="text-xs text-zinc-400">TOKEN NUMBER</div>
+                            <div id="modal-token-number" class="font-mono text-6xl font-bold tracking-tighter text-emerald-400"></div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-emerald-400">STATUS</div>
+                            <div class="font-semibold text-emerald-400">CONFIRMED</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 pt-6 border-t border-zinc-800 grid grid-cols-2 gap-x-6 text-sm">
+                        <div>
+                            <div class="text-xs text-zinc-400">DOCTOR</div>
+                            <div id="modal-doctor" class="font-medium"></div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-zinc-400">TIME SLOT</div>
+                            <div id="modal-time" class="font-medium"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-center">
+                    <div class="qr-container bg-white p-4 rounded-2xl">
+                        <img id="modal-qr" class="w-40 h-40" alt="QR Code">
+                    </div>
+                </div>
+                <div class="text-xs text-zinc-400 mt-2">Show this QR at the OPD counter</div>
+            </div>
+            
+            <div class="px-8 pb-8 flex gap-3">
+                <button onclick="hideSuccessModal()" class="flex-1 py-3.5 bg-zinc-800 hover:bg-zinc-700 rounded-3xl font-medium text-sm">Close</button>
+                <button onclick="viewMyTokens()" class="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 transition-colors rounded-3xl font-semibold text-sm">View My Appointments</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="border-t border-zinc-800 text-center py-6 text-xs text-zinc-500">
+        <div>DOCTOR 47 • Apollo Hospitals • Bengaluru • v2.1.4 • <span class="font-mono">Real-time synced</span></div>
+    </footer>
+
+    <script>
+        // Tailwind
+        function initTailwind() {
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            'display': ['Space Grotesk', 'system-ui', 'sans-serif']
+                        }
+                    }
+                }
+            };
+        }
+
+        // Data
+        let doctors = [
+            { id: 1, name: "Dr. Arjun Mehta", department: "General Medicine", specialty: "General Physician", avgWait: 18, queue: 14, counter: "OPD-03" },
+            { id: 2, name: "Dr. Priya Nair", department: "General Medicine", specialty: "Internal Medicine", avgWait: 24, queue: 9, counter: "OPD-01" },
+            { id: 3, name: "Dr. Rohan Kapoor", department: "Cardiology", specialty: "Cardiologist", avgWait: 32, queue: 7, counter: "OPD-12" },
+            { id: 4, name: "Dr. Ananya Rao", department: "Cardiology", specialty: "Interventional Cardiologist", avgWait: 27, queue: 11, counter: "OPD-11" },
+            { id: 5, name: "Dr. Vikram Singh", department: "Pulmonology", specialty: "Pulmonologist", avgWait: 21, queue: 8, counter: "OPD-07" },
+            { id: 6, name: "Dr. Meera Iyer", department: "Pulmonology", specialty: "Respiratory Medicine", avgWait: 15, queue: 19, counter: "OPD-08" }
+        ];
+
+        let appointments = [];
+        let currentDepartment = 0;
+        let selectedDoctor = null;
+        let selectedSlot = null;
+
+        function loadData() {
+            const saved = localStorage.getItem('doctor47_appointments');
+            if (saved) {
+                appointments = JSON.parse(saved);
+            } else {
+                // Demo data
+                appointments = [
+                    { 
+                        id: Date.now() - 120000, 
+                        tokenNumber: "D47-4821", 
+                        patientName: "Priya Sharma", 
+                        doctorId: 1, 
+                        status: "waiting", 
+                        bookedAt: "2026-06-15T09:12:00", 
+                        position: 4,
+                        timeSlot: "09:30"
+                    },
+                    { 
+                        id: Date.now() - 90000, 
+                        tokenNumber: "D47-4834", 
+                        patientName: "Priya Sharma", 
+                        doctorId: 3, 
+                        status: "serving", 
+                        bookedAt: "2026-06-15T10:05:00", 
+                        position: 1,
+                        timeSlot: "10:45"
+                    },
+                    { 
+                        id: Date.now() - 60000, 
+                        tokenNumber: "D47-4912", 
+                        patientName: "Priya Sharma", 
+                        doctorId: 5, 
+                        status: "waiting", 
+                        bookedAt: "2026-06-15T11:40:00", 
+                        position: 8,
+                        timeSlot: "12:15"
+                    }
+                ];
+                saveData();
+            }
+            updateMyTokensCount();
+        }
+
+        function saveData() {
+            localStorage.setItem('doctor47_appointments', JSON.stringify(appointments));
+            updateMyTokensCount();
+        }
+
+        function updateMyTokensCount() {
+            const active = appointments.filter(a => a.status !== 'done');
+            const el = document.getElementById('my-tokens-count');
+            if (el) el.innerHTML = active.length;
+        }
+
+        // Tab switching
+        function switchTab(tab) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => {
+                t.classList.remove('active-tab', 'border-emerald-500');
+                t.classList.add('border-transparent');
+            });
+            
+            let section, tabEl;
+            
+            if (tab === 'book') {
+                section = document.getElementById('book-section');
+                tabEl = document.getElementById('tab-book');
+            } else if (tab === 'my-tokens') {
+                section = document.getElementById('my-tokens-section');
+                tabEl = document.getElementById('tab-my-tokens');
+                renderMyAppointments();
+            } else if (tab === 'live') {
+                section = document.getElementById('live-section');
+                tabEl = document.getElementById('tab-live');
+                renderLiveQueue();
+            }
+            
+            section.classList.add('active');
+            tabEl.classList.add('active-tab', 'border-emerald-500');
+
+            if (tab === 'history') {
+                renderHistory();
+            }
+        }
+
+        // Department Selection
+        function selectDepartment(deptIndex) {
+            document.querySelectorAll('[id^="dept-"]').forEach(el => {
+                el.classList.remove('active', 'border-emerald-500');
+                el.classList.add('border-emerald-900/50');
+            });
+            
+            const active = document.getElementById(`dept-${deptIndex}`);
+            active.classList.add('active', 'border-emerald-500');
+            active.classList.remove('border-emerald-900/50');
+            
+            currentDepartment = deptIndex;
+            renderDoctors();
+            
+            document.getElementById('doctors-section').classList.remove('hidden');
+            document.getElementById('booking-form').classList.add('hidden');
+        }
+
+        function renderDoctors() {
+            const container = document.getElementById('doctors-grid');
+            container.innerHTML = '';
+            
+            const depts = ["General Medicine", "Cardiology", "Pulmonology"];
+            const deptName = depts[currentDepartment];
+            
+            const filtered = doctors.filter(d => d.department === deptName);
+            
+            filtered.forEach(doctor => {
+                const div = document.createElement('div');
+                div.className = `service-card cursor-pointer px-5 py-4 bg-zinc-900 border border-emerald-900/50 hover:border-emerald-600 rounded-3xl flex justify-between items-center`;
+                
+                div.innerHTML = `
+                    <div class="flex items-center gap-x-4">
+                        <div class="w-10 h-10 bg-emerald-950 rounded-2xl flex items-center justify-center">
+                            <i class="fa-solid fa-user-md text-emerald-400 text-xl"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold">${doctor.name}</div>
+                            <div class="text-xs text-emerald-400">${doctor.specialty}</div>
+                            <div class="text-[10px] text-zinc-400 mt-0.5">${doctor.counter}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-zinc-400">Wait</div>
+                        <div class="font-mono font-semibold text-emerald-400">${doctor.avgWait} min</div>
+                        <div class="text-xs text-emerald-400">${doctor.queue} in queue</div>
+                    </div>
+                `;
+                
+                div.onclick = () => selectDoctor(doctor);
+                container.appendChild(div);
+            });
+        }
+
+        function selectDoctor(doctor) {
+            selectedDoctor = doctor;
+            
+            document.querySelectorAll('#doctors-grid > div').forEach(el => {
+                el.classList.remove('!border-emerald-500', '!bg-emerald-950');
+                if (el.innerHTML.includes(doctor.name)) {
+                    el.classList.add('!border-emerald-500', '!bg-emerald-950');
+                }
+            });
+            
+            const form = document.getElementById('booking-form');
+            form.classList.remove('hidden');
+            
+            document.getElementById('selected-doctor-name').innerHTML = doctor.name;
+            document.getElementById('selected-doctor-specialty').innerHTML = doctor.specialty + " • " + doctor.counter;
+            document.getElementById('doctor-queue-count').innerHTML = doctor.queue;
+            
+            renderTimeSlots();
+        }
+
+        function renderTimeSlots() {
+            const container = document.getElementById('time-slots');
+            container.innerHTML = '';
+            
+            const slots = ["09:30", "10:45", "12:15", "14:00", "15:30", "16:45"];
+            
+            slots.forEach(slot => {
+                const div = document.createElement('div');
+                div.className = `time-slot cursor-pointer px-4 py-3 text-center bg-zinc-950 border border-zinc-700 hover:border-emerald-600 rounded-2xl text-sm`;
+                div.innerHTML = slot;
+                
+                div.onclick = () => {
+                    document.querySelectorAll('.time-slot').forEach(el => {
+                        el.classList.remove('!bg-emerald-600', '!border-emerald-500', '!text-white');
+                        el.classList.add('bg-zinc-950', 'border-zinc-700');
+                    });
+                    div.classList.add('!bg-emerald-600', '!border-emerald-500', '!text-white');
+                    div.classList.remove('bg-zinc-950', 'border-zinc-700');
+                    selectedSlot = slot;
+                };
+                
+                container.appendChild(div);
+            });
+        }
+
+        function bookAppointment() {
+            if (!selectedDoctor || !selectedSlot) {
+                showToast("Please select a time slot", true);
+                return;
+            }
+            
+            const name = document.getElementById('user-name').value || "Guest Patient";
+            const phone = document.getElementById('user-phone').value;
+            
+            const tokenNumber = "D47-" + Math.floor(1000 + Math.random() * 9000);
+            
+            const sameDoctor = appointments.filter(a => a.doctorId === selectedDoctor.id && a.status !== 'done');
+            const position = sameDoctor.length + 1;
+            
+            const newAppointment = {
+                id: Date.now(),
+                tokenNumber: tokenNumber,
+                patientName: name,
+                doctorId: selectedDoctor.id,
+                status: "waiting",
+                bookedAt: new Date().toISOString(),
+                position: position,
+                timeSlot: selectedSlot
+            };
+            
+            appointments.unshift(newAppointment);
+            saveData();
+            
+            showSuccessModal(newAppointment);
+            
+            // Reset form
+            document.getElementById('booking-form').classList.add('hidden');
+            document.querySelectorAll('#doctors-grid > div').forEach(el => el.classList.remove('!border-emerald-500', '!bg-emerald-950'));
+        }
+
+        function showSuccessModal(appointment) {
+            const modal = document.getElementById('success-modal');
+            const doctor = doctors.find(d => d.id === appointment.doctorId);
+            
+            document.getElementById('modal-token-number').innerHTML = appointment.tokenNumber;
+            document.getElementById('modal-doctor').innerHTML = doctor.name;
+            document.getElementById('modal-time').innerHTML = appointment.timeSlot;
+            
+            const qrData = `DOCTOR47:${appointment.tokenNumber}:${doctor.name}:${appointment.patientName}`;
+            document.getElementById('modal-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrData)}&bgcolor=ffffff&color=000000`;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function hideSuccessModal() {
+            const modal = document.getElementById('success-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+            
+            if (document.getElementById('my-tokens-section').classList.contains('active')) {
+                renderMyAppointments();
+            }
+        }
+
+        function cancelBookingForm() {
+            document.getElementById('booking-form').classList.add('hidden');
+            selectedDoctor = null;
+            selectedSlot = null;
+            
+            // Clear any selected time slots
+            document.querySelectorAll('.time-slot').forEach(el => {
+                el.classList.remove('!bg-emerald-600', '!border-emerald-500', '!text-white');
+                el.classList.add('bg-zinc-950', 'border-zinc-700');
+            });
+        }
+
+        // My Appointments
+        function renderMyAppointments() {
+            const container = document.getElementById('my-tokens-list');
+            container.innerHTML = '';
+            
+            const active = appointments.filter(a => a.status !== 'done');
+            
+            if (active.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 px-6 bg-zinc-900 border border-zinc-800 rounded-3xl">
+                        <i class="fa-solid fa-calendar-check text-5xl text-zinc-700 mb-4"></i>
+                        <div class="font-medium text-lg">No active appointments</div>
+                        <p class="text-zinc-400 mt-1">Book your next consultation with DOCTOR 47</p>
+                        <button onclick="switchTab('book')" class="mt-5 px-6 py-2.5 text-sm bg-emerald-600 rounded-3xl font-medium">Book Appointment</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            active.forEach(app => {
+                const doctor = doctors.find(d => d.id === app.doctorId);
+                const statusClass = app.status === 'serving' ? 'status-serving' : 'status-waiting';
+                const statusText = app.status === 'serving' ? 'WITH DOCTOR' : 'WAITING';
+                
+                const div = document.createElement('div');
+                div.className = `token-card bg-zinc-900 border border-zinc-700 rounded-3xl p-6`;
+                
+                const estWait = Math.max(5, doctor.avgWait - (app.position * 2));
+                
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-mono text-4xl font-bold tracking-tighter text-emerald-400">${app.tokenNumber}</div>
+                            <div class="text-xs text-zinc-400 mt-1">${doctor.name} • ${doctor.counter}</div>
+                        </div>
+                        
+                        <div class="text-right">
+                            <div class="px-3 py-0.5 text-xs font-medium rounded-full ${statusClass} inline-block mb-1">${statusText}</div>
+                            <div class="font-mono text-3xl font-semibold tabular-nums">${app.position}</div>
+                            <div class="text-xs text-emerald-400">in queue</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex items-center justify-between text-sm">
+                        <div>
+                            <span class="text-zinc-400">Est. wait:</span> 
+                            <span class="font-semibold" id="countdown-${app.id}">${estWait} min</span>
+                            <span class="text-xs text-zinc-400 ml-2">(${app.timeSlot})</span>
+                        </div>
+                        
+                        <div class="flex gap-x-2">
+                            <button onclick="showQRModal(${app.id})" class="px-4 py-1.5 text-xs flex items-center gap-x-2 border border-zinc-700 hover:bg-zinc-800 transition-colors rounded-2xl">
+                                <i class="fa-solid fa-qrcode"></i>
+                                <span>QR Code</span>
+                            </button>
+                            
+                            ${app.status === 'waiting' ? `
+                            <button onclick="cancelAppointment(${app.id}, this)" class="px-4 py-1.5 text-xs flex items-center gap-x-2 border border-red-900/60 hover:bg-red-950 text-red-400 transition-colors rounded-2xl">
+                                <i class="fa-solid fa-times"></i>
+                                <span>Cancel</span>
+                            </button>` : ''}
+                            
+                            <button onclick="notifyMe(${app.id})" class="px-4 py-1.5 text-xs flex items-center gap-x-2 border border-emerald-700 hover:bg-emerald-950 text-emerald-400 transition-colors rounded-2xl">
+                                <i class="fa-solid fa-bell"></i>
+                                <span>Notify</span>
+                            </button>
+                            
+                            ${app.status === 'waiting' ? `
+                            <button onclick="imOnMyWay(${app.id}, this)" class="px-4 py-1.5 text-xs flex items-center gap-x-2 border border-amber-700 hover:bg-amber-950 text-amber-400 transition-colors rounded-2xl">
+                                <i class="fa-solid fa-walking"></i>
+                                <span>I'm on my way</span>
+                            </button>
+                            
+                            <button onclick="speakVoiceAnnouncement('${app.tokenNumber}', '${doctor.name}', '${doctor.counter}')" class="px-4 py-1.5 text-xs flex items-center gap-x-2 border border-purple-700 hover:bg-purple-950 text-purple-400 transition-colors rounded-2xl">
+                                <i class="fa-solid fa-volume-up"></i>
+                                <span>Voice</span>
+                            </button>` : ''}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+                
+                // Start live countdown for this appointment
+                startCountdown(app.id, app.doctorId);
+            });
+        }
+
+        function showQRModal(appId) {
+            const app = appointments.find(a => a.id === appId);
+            if (!app) return;
+            
+            const doctor = doctors.find(d => d.id === app.doctorId);
+            
+            const modal = document.getElementById('success-modal');
+            document.getElementById('modal-token-number').innerHTML = app.tokenNumber;
+            document.getElementById('modal-doctor').innerHTML = doctor.name;
+            document.getElementById('modal-time').innerHTML = app.timeSlot;
+            
+            const qrData = `DOCTOR47:${app.tokenNumber}:${doctor.name}:${app.patientName}`;
+            document.getElementById('modal-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrData)}&bgcolor=ffffff&color=000000`;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function cancelAppointment(appId, btn) {
+            if (!confirm("Cancel this appointment?")) return;
+            
+            appointments = appointments.filter(a => a.id !== appId);
+            saveData();
+            
+            renderMyAppointments();
+            
+            if (document.getElementById('live-section').classList.contains('active')) {
+                renderLiveQueue();
+            }
+            if (document.getElementById('history-section').classList.contains('active')) {
+                renderHistory();
+            }
+            
+            showToast("Appointment cancelled successfully");
+        }
+
+        function notifyMe(appId) {
+            const app = appointments.find(a => a.id === appId);
+            const doctor = doctors.find(d => d.id === app.doctorId);
+            
+            // Request real browser notification permission
+            if ("Notification" in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        new Notification("DOCTOR 47 - Appointment Reminder", {
+                            body: `Your appointment with ${doctor.name} is coming up soon. Please be ready.`,
+                            icon: "https://i.pravatar.cc/64?img=68"
+                        });
+                    }
+                });
+            }
+            
+            showToast(`Push notification enabled for ${doctor.name}`);
+            
+            // Fallback toast + real notification simulation
+            setTimeout(() => {
+                if (app.status === 'waiting') {
+                    if ("Notification" in window && Notification.permission === "granted") {
+                        new Notification("🔔 Your Turn is Near!", {
+                            body: `Please proceed to ${doctor.counter} for ${doctor.name}`,
+                            icon: "https://i.pravatar.cc/64?img=68"
+                        });
+                    } else {
+                        showToast(`🔔 Your turn with ${doctor.name} is coming up! Please proceed to ${doctor.counter}`, false, true);
+                    }
+                }
+            }, 12000);
+        }
+
+        // I'm On My Way feature
+        function imOnMyWay(appId, buttonElement) {
+            const app = appointments.find(a => a.id === appId);
+            const doctor = doctors.find(d => d.id === app.doctorId);
+            
+            buttonElement.outerHTML = `<span class="px-4 py-1.5 text-xs flex items-center gap-x-2 text-emerald-400"><i class="fa-solid fa-check"></i> <span>Checked in</span></span>`;
+            
+            showToast(`Thank you! We've noted you're on your way to ${doctor.counter}`);
+            
+            // Reduce estimated wait time slightly
+            app.position = Math.max(1, app.position - 1);
+            
+            // Refresh views
+            setTimeout(() => {
+                if (document.getElementById('my-tokens-section').classList.contains('active')) {
+                    renderMyAppointments();
+                }
+                if (document.getElementById('live-section').classList.contains('active')) {
+                    renderLiveQueue();
+                }
+            }, 800);
+        }
+
+        // ==================== LIVE COUNTDOWN TIMER ====================
+        let countdownIntervals = {};
+
+        function startCountdown(appId, doctorId) {
+            if (countdownIntervals[appId]) clearInterval(countdownIntervals[appId]);
+            
+            const doctor = doctors.find(d => d.id === doctorId);
+            let minutesLeft = doctor.avgWait;
+            
+            countdownIntervals[appId] = setInterval(() => {
+                minutesLeft--;
+                
+                const el = document.getElementById(`countdown-${appId}`);
+                if (el) {
+                    if (minutesLeft <= 0) {
+                        el.innerHTML = `<span class="text-emerald-400">Now</span>`;
+                        clearInterval(countdownIntervals[appId]);
+                    } else {
+                        el.innerHTML = `${minutesLeft} min`;
+                    }
+                }
+                
+                if (minutesLeft <= 0) {
+                    clearInterval(countdownIntervals[appId]);
+                }
+            }, 60000); // Update every minute (for demo we can speed it up)
+        }
+
+        // Voice Announcement Simulation
+        function speakVoiceAnnouncement(tokenNumber, doctorName, counter) {
+            const utterance = new SpeechSynthesisUtterance(
+                `Token number ${tokenNumber}. Please proceed to ${counter} for ${doctorName}.`
+            );
+            utterance.rate = 0.9;
+            utterance.pitch = 1.1;
+            utterance.volume = 0.9;
+            
+            window.speechSynthesis.speak(utterance);
+            
+            showToast(`🔊 Voice announcement played: ${tokenNumber}`);
+        }
+
+        // Patient History
+        function renderHistory() {
+            const container = document.getElementById('history-list');
+            container.innerHTML = '';
+            
+            const completed = appointments.filter(a => a.status === 'done');
+            
+            document.getElementById('history-count').innerHTML = `${completed.length} total`;
+            
+            if (completed.length === 0) {
+                container.innerHTML = `
+                    <div class="px-6 py-12 text-center text-zinc-400">
+                        <i class="fa-solid fa-history text-4xl mb-4 text-zinc-700"></i>
+                        <div>No completed appointments yet</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            completed.forEach(app => {
+                const doctor = doctors.find(d => d.id === app.doctorId);
+                const date = new Date(app.bookedAt).toLocaleDateString('en-IN', { 
+                    day: 'numeric', month: 'short', year: 'numeric' 
+                });
+                
+                const div = document.createElement('div');
+                div.className = `px-6 py-5 flex items-center justify-between hover:bg-zinc-800/50 transition-colors`;
+                
+                div.innerHTML = `
+                    <div class="flex items-center gap-x-4">
+                        <div>
+                            <div class="font-mono text-emerald-400">${app.tokenNumber}</div>
+                            <div class="text-sm">${doctor.name}</div>
+                        </div>
+                        <div class="text-xs text-zinc-400">${doctor.department}</div>
+                    </div>
+                    
+                    <div class="text-right">
+                        <div class="text-sm font-medium">${date}</div>
+                        <div class="text-xs text-emerald-400">${app.timeSlot || '—'}</div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Live Queue
+        function renderLiveQueue() {
+            const tbody = document.getElementById('live-queue-table');
+            tbody.innerHTML = '';
+            
+            const active = [...appointments]
+                .filter(a => a.status !== 'done')
+                .sort((a, b) => a.position - b.position);
+            
+            if (active.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-12 text-center text-zinc-400">No patients currently in queue</td></tr>`;
+                updateLiveStats(0, 0);
+                return;
+            }
+            
+            let serving = 0;
+            
+            active.forEach(app => {
+                const doctor = doctors.find(d => d.id === app.doctorId);
+                const statusHTML = app.status === 'serving' 
+                    ? `<span class="px-3 py-1 text-xs font-medium rounded-full status-serving">With Doctor</span>` 
+                    : `<span class="px-3 py-1 text-xs font-medium rounded-full status-waiting">Waiting</span>`;
+                
+                if (app.status === 'serving') serving++;
+                
+                const estWait = Math.max(5, doctor.avgWait - (app.position * 2));
+                
+                const row = document.createElement('tr');
+                row.className = `queue-row hover:bg-zinc-800/60`;
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-mono font-semibold text-lg text-emerald-400">${app.tokenNumber}</td>
+                    <td class="px-6 py-4">${app.patientName}</td>
+                    <td class="px-6 py-4">
+                        <div class="font-medium">${doctor.name}</div>
+                        <div class="text-xs text-emerald-400">${doctor.counter}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm">${doctor.department}</td>
+                    <td class="px-6 py-4">${statusHTML}</td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="font-mono font-bold text-xl">${app.position}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="font-medium text-emerald-400">${estWait} min</div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            updateLiveStats(active.length, serving);
+        }
+
+        function updateLiveStats(total, serving) {
+            document.getElementById('total-queue').innerHTML = total;
+            document.getElementById('serving-count').innerHTML = serving;
+            document.getElementById('avg-wait-live').innerHTML = (18 + Math.floor(Math.random() * 8)) + '<span class="text-xl">min</span>';
+            document.getElementById('today-tokens').innerHTML = 3842 + Math.floor(Math.random() * 60);
+        }
+
+        function advanceAllQueues() {
+            let changed = 0;
+            
+            // Complete current serving
+            appointments.forEach(app => {
+                if (app.status === 'serving') {
+                    app.status = 'done';
+                    changed++;
+                }
+            });
+            
+            // Promote next waiting to serving
+            const waiting = appointments
+                .filter(a => a.status === 'waiting')
+                .sort((a, b) => a.position - b.position);
+            
+            if (waiting.length > 0) {
+                waiting[0].status = 'serving';
+                changed++;
+            }
+            
+            // Recalculate positions
+            const stillWaiting = appointments.filter(a => a.status === 'waiting');
+            stillWaiting.sort((a, b) => a.position - b.position);
+            stillWaiting.forEach((app, index) => app.position = index + 1);
+            
+            saveData();
+            renderLiveQueue();
+            
+            if (document.getElementById('my-tokens-section').classList.contains('active')) {
+                renderMyAppointments();
+            }
+            
+            showToast(`Queue advanced. ${changed} patients moved.`);
+        }
+
+        // Toast
+        function showToast(message, isError = false, isImportant = false) {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3.5 rounded-3xl text-sm flex items-center gap-x-3 shadow-xl border ${isError ? 'bg-red-950 border-red-800 text-red-400' : 'bg-zinc-800 border-zinc-700'} ${isImportant ? 'ring-1 ring-emerald-500' : ''}`;
+            toast.innerHTML = `
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" class="text-xs px-3 py-0.5 bg-zinc-700 rounded-full">OK</button>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentNode) toast.parentNode.removeChild(toast);
+            }, isImportant ? 6000 : 3200);
+        }
+
+        // Admin Panel
+        function showAdminPanel() {
+            const html = `
+                <div id="admin-modal" onclick="document.getElementById('admin-modal').remove()" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[60]">
+                    <div onclick="event.stopImmediatePropagation()" class="bg-zinc-900 border border-zinc-700 w-full max-w-md mx-4 rounded-3xl overflow-hidden">
+                        <div class="px-8 py-6 border-b border-zinc-800 flex justify-between items-center">
+                            <div>
+                                <div class="font-semibold text-xl">Staff Dashboard</div>
+                                <div class="text-xs text-emerald-400">DOCTOR 47 • Apollo Hospitals</div>
+                            </div>
+                            <button onclick="document.getElementById('admin-modal').remove()" class="text-zinc-400 hover:text-white">
+                                <i class="fa-solid fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="p-8 space-y-6">
+                            <div>
+                                <div class="text-xs font-medium text-zinc-400 mb-3">QUICK ACTIONS</div>
+                                <div class="grid grid-cols-1 gap-3">
+                                    <button onclick="advanceAllQueues(); document.getElementById('admin-modal').remove()" class="px-4 py-3 bg-emerald-900 hover:bg-emerald-800 rounded-2xl text-sm flex items-center justify-center gap-x-2">
+                                        <i class="fa-solid fa-play"></i>
+                                        <span>Advance All Queues</span>
+                                    </button>
+                                    <button onclick="resetDemoData()" class="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm flex items-center justify-center gap-x-2">
+                                        <i class="fa-solid fa-redo"></i>
+                                        <span>Reset Demo Data</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-4 border-t border-zinc-800">
+                                <div class="text-xs font-medium text-zinc-400 mb-2">SYSTEM STATUS</div>
+                                <div class="space-y-2 text-sm px-1">
+                                    <div class="flex justify-between"><span>Firebase Realtime</span> <span class="text-emerald-400">Connected</span></div>
+                                    <div class="flex justify-between"><span>Active Counters</span> <span class="font-mono">47 / 52</span></div>
+                                    <div class="flex justify-between"><span>Current Patients</span> <span class="font-mono">124</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+
+        function resetDemoData() {
+            if (!confirm("Reset all data?")) return;
+            localStorage.removeItem('doctor47_appointments');
+            appointments = [];
+            loadData();
+            document.getElementById('admin-modal').remove();
+            
+            if (document.getElementById('live-section').classList.contains('active')) renderLiveQueue();
+            if (document.getElementById('my-tokens-section').classList.contains('active')) renderMyAppointments();
+            
+            showToast("Demo data reset successfully");
+        }
+
+        function viewMyTokens() {
+            hideSuccessModal();
+            switchTab('my-tokens');
+        }
+
+        // ==================== REALISTIC FIREBASE REALTIME SIMULATION ====================
+        let firebaseConnected = true;
+        let firebaseInterval = null;
+
+        function updateFirebaseStatus(connected) {
+            const icon = document.getElementById('firebase-icon');
+            const status = document.getElementById('firebase-status');
+            const pulse = document.getElementById('firebase-pulse');
+            const lastSync = document.getElementById('last-sync');
+
+            if (connected) {
+                if (icon) icon.className = "fa-solid fa-cloud text-emerald-400";
+                if (status) status.innerHTML = "Firebase";
+                if (pulse) pulse.classList.remove('hidden');
+                if (lastSync) lastSync.innerHTML = "Connected";
+            } else {
+                if (icon) icon.className = "fa-solid fa-cloud text-red-400";
+                if (status) status.innerHTML = "Offline";
+                if (pulse) pulse.classList.add('hidden');
+                if (lastSync) lastSync.innerHTML = "Paused";
+            }
+        }
+
+        function startFirebaseSimulation() {
+            if (firebaseInterval) clearInterval(firebaseInterval);
+
+            firebaseInterval = setInterval(() => {
+                if (!firebaseConnected) return;
+
+                // === REAL FIREBASE BEHAVIOR ===
+                let updated = false;
+
+                // 1. Update doctor queue counts (multiple doctors)
+                const doctorsToUpdate = Math.floor(Math.random() * 3) + 2;
+                for (let i = 0; i < doctorsToUpdate; i++) {
+                    const doctor = doctors[Math.floor(Math.random() * doctors.length)];
+                    const change = Math.floor(Math.random() * 3) - 1;
+                    doctor.queue = Math.max(2, Math.min(32, doctor.queue + change));
+                    updated = true;
+                }
+
+                // 2. Move tokens forward (realistic position updates)
+                const waitingTokens = appointments.filter(a => a.status === 'waiting');
+                if (waitingTokens.length > 0) {
+                    const moveCount = Math.min(waitingTokens.length, Math.floor(Math.random() * 3) + 1);
+                    const shuffled = [...waitingTokens].sort(() => Math.random() - 0.5);
+                    
+                    for (let i = 0; i < moveCount; i++) {
+                        shuffled[i].position = Math.max(1, shuffled[i].position - 1);
+                        updated = true;
+                    }
+                }
+
+                // 3. Update UI if anything changed
+                if (updated) {
+                    refreshFirebaseUI();
+                    
+                    // Update last sync time
+                    const lastSyncEl = document.getElementById('last-sync');
+                    if (lastSyncEl) lastSyncEl.innerHTML = "Just now";
+                }
+
+            }, 6500); // Every 6.5 seconds - feels very real
+        }
+
+        function refreshFirebaseUI() {
+            const liveSection = document.getElementById('live-section');
+            const mySection = document.getElementById('my-tokens-section');
+
+            if (liveSection && liveSection.classList.contains('active')) {
+                renderLiveQueue();
+            }
+            if (mySection && mySection.classList.contains('active')) {
+                renderMyAppointments();
+            }
+        }
+
+        function forceFirebaseSync() {
+            if (!firebaseConnected) {
+                showToast("Firebase is currently offline", true);
+                return;
+            }
+
+            const originalHTML = event.currentTarget ? event.currentTarget.innerHTML : '';
+            
+            // Show syncing state
+            if (event.currentTarget) {
+                event.currentTarget.innerHTML = `<i class="fa-solid fa-sync fa-spin mr-1"></i> Syncing`;
+            }
+
+            // === POWERFUL MANUAL SYNC (like real Firebase) ===
+            
+            // Update ALL doctors with bigger changes
+            doctors.forEach(doctor => {
+                const change = Math.floor(Math.random() * 7) - 2;
+                doctor.queue = Math.max(1, Math.min(35, doctor.queue + change));
+            });
+
+            // Aggressively improve token positions
+            const waiting = appointments.filter(a => a.status === 'waiting');
+            waiting.forEach((token, index) => {
+                if (Math.random() < 0.9) {
+                    token.position = Math.max(1, token.position - 1);
+                }
+            });
+
+            // Refresh visible views
+            refreshFirebaseUI();
+
+            // Reset button and show success
+            setTimeout(() => {
+                if (event.currentTarget) {
+                    event.currentTarget.innerHTML = originalHTML || `<i class="fa-solid fa-sync mr-1"></i> Sync Now`;
+                }
+                
+                showToast("✅ Synced with Firebase", false, true);
+                
+                const lastSyncEl = document.getElementById('last-sync');
+                if (lastSyncEl) lastSyncEl.innerHTML = "Just now";
+            }, 800);
+        }
+
+        function toggleFirebase() {
+            firebaseConnected = !firebaseConnected;
+            updateFirebaseStatus(firebaseConnected);
+
+            if (firebaseConnected) {
+                showToast("✅ Connected to Firebase Realtime");
+                setTimeout(() => {
+                    if (firebaseConnected) forceFirebaseSync();
+                }, 600);
+            } else {
+                showToast("Firebase simulation paused");
+            }
+        }
+
+        // Initialize
+        function initialize() {
+            initTailwind();
+            loadData();
+            
+            // Set first department active
+            const firstDept = document.getElementById('dept-0');
+            if (firstDept) {
+                firstDept.classList.add('active', 'border-emerald-500');
+                firstDept.classList.remove('border-emerald-900/50');
+            }
+            
+            renderDoctors();
+            
+            // Default view
+            document.getElementById('book-section').classList.add('active');
+            document.getElementById('tab-book').classList.add('active-tab', 'border-emerald-500');
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.key.toLowerCase() === 'l') switchTab('live');
+                if (e.key.toLowerCase() === 'm') switchTab('my-tokens');
+                if (e.key === '?') switchTab('book');
+            });
+            
+            // Random live updates
+            setInterval(() => {
+                if (document.getElementById('live-section').classList.contains('active')) {
+                    renderLiveQueue();
+                }
+            }, 28000);
+            
+            // Start realistic Firebase simulation
+            updateFirebaseStatus(true);
+            startFirebaseSimulation();
+            
+            console.log('%c[DOCTOR 47] Real hospital token system ready. Firebase simulation active.', 'color:#444');
+        }
+
+        window.onload = initialize;
+    </script>
+</body>
+</html>
